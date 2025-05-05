@@ -41,8 +41,8 @@ if uploaded_file:
         
         # Optional system message
         system_message = st.text_area(
-            "System message (optional):", 
-            "You are a helpful assistant.", 
+            "System message:", 
+            "Translate the following into Spanish.", 
             help="This message sets the behavior of the assistant"
         )
         
