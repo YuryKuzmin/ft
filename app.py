@@ -57,7 +57,8 @@ if uploaded_file:
                         {"role": "assistant", "content": str(row[completion_col])}
                     ]
                 }
-                jsonl_output.write(json.dumps(json_obj) + '\n')
+                # Use ensure_ascii=False to keep Cyrillic and other non-ASCII characters readable
+                jsonl_output.write(json.dumps(json_obj, ensure_ascii=False) + '\n')
             
             # Create download button for the JSONL file
             st.download_button(
@@ -87,7 +88,8 @@ if uploaded_file:
                     "chosen": str(row[preferred_col]),
                     "rejected": str(row[rejected_col])
                 }
-                jsonl_output.write(json.dumps(json_obj) + '\n')
+                # Use ensure_ascii=False to keep Cyrillic and other non-ASCII characters readable
+                jsonl_output.write(json.dumps(json_obj, ensure_ascii=False) + '\n')
             
             # Create download button for the JSONL file
             st.download_button(
