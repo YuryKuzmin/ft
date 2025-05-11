@@ -41,8 +41,8 @@ if uploaded_file:
         
         # Optional system message
         system_message = st.text_area(
-            "System message:", 
-            "Translate the following into Spanish.", 
+            "System message (optional):", 
+            "You are a helpful assistant.", 
             help="This message sets the behavior of the assistant"
         )
         
@@ -70,7 +70,10 @@ if uploaded_file:
             
             # Show sample of the output
             st.subheader("Sample of JSONL output")
-            st.code(jsonl_output.getvalue().split('\n')[:3])
+            output_sample = jsonl_output.getvalue().split('\n')
+            # Only show non-empty lines
+            output_sample = [line for line in output_sample if line.strip()]
+            st.code('\n'.join(output_sample[:3]))
             
     else:  # DPO Fine-Tuning
         # Column mapping for DPO
@@ -79,14 +82,36 @@ if uploaded_file:
         preferred_col = st.selectbox("Select the column containing preferred completions:", df.columns)
         rejected_col = st.selectbox("Select the column containing rejected completions:", df.columns)
         
+        # Optional system message for DPO
+        dpo_system_message = st.text_area(
+            "System message (optional):", 
+            "", 
+            help="Optional system message to include in the input messages array"
+        )
+        
         if st.button("Generate JSONL for DPO Fine-Tuning"):
             # Create the JSONL for DPO
             jsonl_output = io.StringIO()
             for index, row in df.iterrows():
+                # Create messages array with optional system message
+                messages = []
+                if dpo_system_message.strip():
+                    messages.append({"role": "system", "content": dpo_system_message})
+                messages.append({"role": "user", "content": str(row[prompt_col])})
+                
+                # Create the JSON object in the format required for DPO
                 json_obj = {
-                    "prompt": str(row[prompt_col]),
-                    "chosen": str(row[preferred_col]),
-                    "rejected": str(row[rejected_col])
+                    "input": {
+                        "messages": messages,
+                        "tools": [],
+                        "parallel_tool_calls": True
+                    },
+                    "preferred_output": [
+                        {"role": "assistant", "content": str(row[preferred_col])}
+                    ],
+                    "non_preferred_output": [
+                        {"role": "assistant", "content": str(row[rejected_col])}
+                    ]
                 }
                 # Use ensure_ascii=False to keep Cyrillic and other non-ASCII characters readable
                 jsonl_output.write(json.dumps(json_obj, ensure_ascii=False) + '\n')
@@ -101,7 +126,10 @@ if uploaded_file:
             
             # Show sample of the output
             st.subheader("Sample of JSONL output")
-            st.code(jsonl_output.getvalue().split('\n')[:3])
+            output_sample = jsonl_output.getvalue().split('\n')
+            # Only show non-empty lines
+            output_sample = [line for line in output_sample if line.strip()]
+            st.code('\n'.join(output_sample[:3]))
 
 # Documentation section
 st.markdown("""
@@ -122,5 +150,8 @@ st.markdown("""
 
 #### DPO Fine-Tuning
 - You need columns for prompts, preferred completions, and rejected completions
-- Format will include prompt, chosen, and rejected fields
+- Format follows OpenAI's required schema with:
+  - `input.messages` containing user message (and optional system message)
+  - `preferred_output` containing the preferred assistant response
+  - `non_preferred_output` containing the rejected assistant response
 """)
