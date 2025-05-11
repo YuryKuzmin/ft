@@ -82,27 +82,16 @@ if uploaded_file:
         preferred_col = st.selectbox("Select the column containing preferred completions:", df.columns)
         rejected_col = st.selectbox("Select the column containing rejected completions:", df.columns)
         
-        # Optional system message for DPO
-        dpo_system_message = st.text_area(
-            "System message (optional):", 
-            "", 
-            help="Optional system message to include in the input messages array"
-        )
-        
         if st.button("Generate JSONL for DPO Fine-Tuning"):
             # Create the JSONL for DPO
             jsonl_output = io.StringIO()
             for index, row in df.iterrows():
-                # Create messages array with optional system message
-                messages = []
-                if dpo_system_message.strip():
-                    messages.append({"role": "system", "content": dpo_system_message})
-                messages.append({"role": "user", "content": str(row[prompt_col])})
-                
                 # Create the JSON object in the format required for DPO
                 json_obj = {
                     "input": {
-                        "messages": messages,
+                        "messages": [
+                            {"role": "user", "content": str(row[prompt_col])}
+                        ],
                         "tools": [],
                         "parallel_tool_calls": True
                     },
@@ -151,7 +140,7 @@ st.markdown("""
 #### DPO Fine-Tuning
 - You need columns for prompts, preferred completions, and rejected completions
 - Format follows OpenAI's required schema with:
-  - `input.messages` containing user message (and optional system message)
+  - `input.messages` containing the user message
   - `preferred_output` containing the preferred assistant response
   - `non_preferred_output` containing the rejected assistant response
 """)
